@@ -4,8 +4,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Header } from './Header';
-import { Search, ArrowRight, Users, AlertCircle, Edit, ArrowRightLeft } from 'lucide-react';
-import { Family, FamilyMember } from '../types/family';
+import { Search, ArrowRight, Users, AlertCircle, Edit, ArrowRightLeft, UserCheck } from 'lucide-react';
+import { Family } from '../types/family';
 import { useAuth } from '../contexts/AuthContext';
 import { Badge } from './ui/badge';
 import { toast } from 'sonner';
@@ -42,20 +42,8 @@ export function FamilySearch({ onCreateNew, onEditExisting, onTransferFamily, on
 
     const allFamilies: Family[] = JSON.parse(stored);
     const results = allFamilies.filter(family => {
-      // Verificar responsável familiar (primeiro membro)
-      const responsavel = family.identification.membros?.[0];
-      if (responsavel) {
-        const nomeMatch = nome.trim() && responsavel.nome?.toLowerCase().includes(nome.toLowerCase());
-        const cpfMatch = cpf.trim() && responsavel.cpf?.replace(/\D/g, '') === cpf.replace(/\D/g, '');
-        const nisMatch = nis.trim() && responsavel.nis === nis.trim();
-        
-        if (nomeMatch || cpfMatch || nisMatch) {
-          return true;
-        }
-      }
-
-      // Verificar outros membros
-      return family.identification.membros?.some(membro => {
+      // Buscar em todos os membros da família
+      return family.membros?.some(membro => {
         const nomeMatch = nome.trim() && membro.nome?.toLowerCase().includes(nome.toLowerCase());
         const cpfMatch = cpf.trim() && membro.cpf?.replace(/\D/g, '') === cpf.replace(/\D/g, '');
         const nisMatch = nis.trim() && membro.nis === nis.trim();
@@ -79,6 +67,11 @@ export function FamilySearch({ onCreateNew, onEditExisting, onTransferFamily, on
 
   const canEdit = (family: Family) => {
     return user && family.crasId === user.tecnico.cras;
+  };
+
+  const getResponsavel = (family: Family) => {
+    const responsavel = family.membros.find(m => m.isResponsavel);
+    return responsavel?.nome || 'Sem responsável definido';
   };
 
   return (
@@ -186,18 +179,21 @@ export function FamilySearch({ onCreateNew, onEditExisting, onTransferFamily, on
                   <div className="space-y-4 mb-6">
                     {searchResults.map((family) => {
                       const isEditable = canEdit(family);
-                      const responsavel = family.identification.membros?.[0];
+                      const responsavel = family.membros.find(m => m.isResponsavel);
 
                       return (
                         <Card key={family.id} className="shadow-lg border-blue-100">
                           <CardHeader className="bg-gradient-to-br from-blue-50 to-white">
                             <div className="flex items-start justify-between">
                               <div>
-                                <CardTitle className="text-blue-900">
-                                  {responsavel?.nome || 'Sem nome'}
-                                </CardTitle>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <UserCheck className="w-4 h-4 text-blue-600" />
+                                  <CardTitle className="text-blue-900">
+                                    {responsavel?.nome || 'Sem responsável'}
+                                  </CardTitle>
+                                </div>
                                 <CardDescription>
-                                  Prontuário: {family.identification.prontuario || 'N/A'}
+                                  Prontuário: {family.prontuario || 'N/A'}
                                 </CardDescription>
                               </div>
                               <Badge variant={isEditable ? 'default' : 'secondary'}>
@@ -216,12 +212,8 @@ export function FamilySearch({ onCreateNew, onEditExisting, onTransferFamily, on
                                 <p className="font-medium">{responsavel?.nis || 'N/A'}</p>
                               </div>
                               <div>
-                                <p className="text-sm text-gray-600">Telefone:</p>
-                                <p className="font-medium">{family.identification.telefone1 || 'N/A'}</p>
-                              </div>
-                              <div>
                                 <p className="text-sm text-gray-600">Membros:</p>
-                                <p className="font-medium">{family.identification.membros?.length || 0}</p>
+                                <p className="font-medium">{family.membros?.length || 0}</p>
                               </div>
                             </div>
 

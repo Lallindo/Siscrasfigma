@@ -3,7 +3,7 @@ import { Family } from '../types/family';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Plus, Eye, Trash2, Users, Search, Lock } from 'lucide-react';
+import { Plus, Eye, Trash2, Users, Search, Lock, UserCheck } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,19 +58,13 @@ export function FamilyList({ onNewFamily, onViewFamily }: FamilyListProps) {
 
     const term = searchTerm.toLowerCase().trim();
     const filtered = families.filter(family => {
-      // Buscar no responsável familiar
-      if (family.identification.responsavelFamiliar?.toLowerCase().includes(term)) {
-        return true;
-      }
-      if (family.identification.cpf?.toLowerCase().includes(term)) {
-        return true;
-      }
-      if (family.identification.nis?.toLowerCase().includes(term)) {
+      // Buscar no prontuário
+      if (family.prontuario?.toLowerCase().includes(term)) {
         return true;
       }
 
       // Buscar em todos os membros da família
-      return family.identification.membros?.some(membro => {
+      return family.membros?.some(membro => {
         return (
           membro.nome?.toLowerCase().includes(term) ||
           membro.cpf?.toLowerCase().includes(term) ||
@@ -103,6 +97,11 @@ export function FamilyList({ onNewFamily, onViewFamily }: FamilyListProps) {
     return user && family.crasId === user.tecnico.cras;
   };
 
+  const getResponsavel = (family: Family) => {
+    const responsavel = family.membros.find(m => m.isResponsavel);
+    return responsavel?.nome || 'Sem responsável definido';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Header />
@@ -125,7 +124,7 @@ export function FamilyList({ onNewFamily, onViewFamily }: FamilyListProps) {
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Buscar por nome, CPF ou NIS..."
+                placeholder="Buscar por nome, CPF, NIS ou prontuário..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -161,14 +160,18 @@ export function FamilyList({ onNewFamily, onViewFamily }: FamilyListProps) {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredFamilies.map(family => {
               const isEditable = canEdit(family);
+              const responsavel = getResponsavel(family);
               return (
                 <Card key={family.id} className="hover:shadow-xl transition-all hover:scale-[1.02] border-blue-100">
                   <CardHeader className="bg-gradient-to-br from-blue-50 to-white">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <CardTitle className="text-blue-900">{family.identification.responsavelFamiliar || 'Sem nome'}</CardTitle>
+                        <div className="flex items-center gap-2 mb-1">
+                          <UserCheck className="w-4 h-4 text-blue-600" />
+                          <CardTitle className="text-blue-900">{responsavel}</CardTitle>
+                        </div>
                         <CardDescription>
-                          Prontuário: {family.identification.prontuario || 'N/A'}
+                          Prontuário: {family.prontuario || 'N/A'}
                         </CardDescription>
                       </div>
                       {!isEditable && (
@@ -186,16 +189,8 @@ export function FamilyList({ onNewFamily, onViewFamily }: FamilyListProps) {
                         <span className="font-medium">{family.crasId}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">CPF:</span>
-                        <span className="font-medium">{family.identification.cpf || 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Telefone:</span>
-                        <span className="font-medium">{family.identification.telefone1 || 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Membros:</span>
-                        <span className="font-medium">{family.identification.membros?.length || 0}</span>
+                        <span className="font-medium">{family.membros?.length || 0}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Cadastrado em:</span>
