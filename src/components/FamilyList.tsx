@@ -22,9 +22,10 @@ import { toast } from 'sonner';
 interface FamilyListProps {
   onNewFamily: () => void;
   onViewFamily: (family: Family) => void;
+  onNavigateToTechnicians: () => void;
 }
 
-export function FamilyList({ onNewFamily, onViewFamily }: FamilyListProps) {
+export function FamilyList({ onNewFamily, onViewFamily, onNavigateToTechnicians }: FamilyListProps) {
   const { user } = useAuth();
   const [families, setFamilies] = useState<Family[]>([]);
   const [filteredFamilies, setFilteredFamilies] = useState<Family[]>([]);
@@ -45,8 +46,23 @@ export function FamilyList({ onNewFamily, onViewFamily }: FamilyListProps) {
     const stored = localStorage.getItem('families');
     if (stored) {
       const allFamilies: Family[] = JSON.parse(stored);
-      setFamilies(allFamilies);
-      setFilteredFamilies(allFamilies);
+      
+      // Migrar famílias antigas para incluir o campo 'ativo'
+      const migratedFamilies = allFamilies.map(family => ({
+        ...family,
+        membros: family.membros.map(membro => ({
+          ...membro,
+          ativo: membro.ativo !== undefined ? membro.ativo : true,
+        })),
+      }));
+      
+      // Salvar de volta se houve migração
+      if (JSON.stringify(allFamilies) !== JSON.stringify(migratedFamilies)) {
+        localStorage.setItem('families', JSON.stringify(migratedFamilies));
+      }
+      
+      setFamilies(migratedFamilies);
+      setFilteredFamilies(migratedFamilies);
     }
   };
 
@@ -102,9 +118,22 @@ export function FamilyList({ onNewFamily, onViewFamily }: FamilyListProps) {
     return responsavel?.nome || 'Sem responsável definido';
   };
 
+  const getRendaTotal = (family: Family) => {
+    const activeMembros = family.membros.filter(m => m.ativo !== false);
+    const total = activeMembros.reduce((sum, membro) => {
+      const renda = Number(membro.rendaBruta) || 0;
+      return sum + renda;
+    }, 0);
+    
+    return total.toLocaleString('pt-BR', { 
+      style: 'currency', 
+      currency: 'BRL' 
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <Header />
+      <Header onNavigateToTechnicians={onNavigateToTechnicians} />
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col gap-4 mb-6">
@@ -161,6 +190,7 @@ export function FamilyList({ onNewFamily, onViewFamily }: FamilyListProps) {
             {filteredFamilies.map(family => {
               const isEditable = canEdit(family);
               const responsavel = getResponsavel(family);
+              const rendaTotal = getRendaTotal(family);
               return (
                 <Card key={family.id} className="hover:shadow-xl transition-all hover:scale-[1.02] border-blue-100">
                   <CardHeader className="bg-gradient-to-br from-blue-50 to-white">
@@ -190,11 +220,15 @@ export function FamilyList({ onNewFamily, onViewFamily }: FamilyListProps) {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Membros:</span>
-                        <span className="font-medium">{family.membros?.length || 0}</span>
+                        <span className="font-medium">{family.membros?.filter(m => m.ativo !== false).length || 0}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Cadastrado em:</span>
                         <span className="font-medium">{new Date(family.createdAt).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Renda Total:</span>
+                        <span className="font-medium">{rendaTotal}</span>
                       </div>
                     </div>
                     <div className="flex gap-2">

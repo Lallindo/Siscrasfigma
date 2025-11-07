@@ -4,6 +4,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Header } from './Header';
+import { BackButton } from './BackButton';
 import { Search, ArrowRight, Users, AlertCircle, Edit, ArrowRightLeft, UserCheck } from 'lucide-react';
 import { Family } from '../types/family';
 import { useAuth } from '../contexts/AuthContext';
@@ -79,11 +80,14 @@ export function FamilySearch({ onCreateNew, onEditExisting, onTransferFamily, on
       <Header />
       <div className="p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-blue-900 mb-2">Nova Família - Buscar Cadastro</h1>
-            <p className="text-gray-600">
-              Antes de cadastrar uma nova família, vamos verificar se já existe um cadastro.
-            </p>
+          <div className="mb-6 flex items-center gap-4">
+            <BackButton onClick={onCancel} />
+            <div>
+              <h1 className="text-blue-900 mb-2">Nova Família - Buscar Cadastro</h1>
+              <p className="text-gray-600">
+                Antes de cadastrar uma nova família, vamos verificar se já existe um cadastro.
+              </p>
+            </div>
           </div>
 
           <Card className="mb-6 shadow-lg border-blue-100">

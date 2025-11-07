@@ -1,10 +1,14 @@
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Users } from 'lucide-react';
 import brasaoJau from 'figma:asset/f200eb0c5925a5f95157d477f13fb3a94ee777aa.png';
 import { SettingsDialog } from './SettingsDialog';
 
-export function Header() {
+interface HeaderProps {
+  onNavigateToTechnicians?: () => void;
+}
+
+export function Header({ onNavigateToTechnicians }: HeaderProps) {
   const { user, logout } = useAuth();
 
   return (
@@ -36,6 +40,17 @@ export function Header() {
                 </div>
                 <p className="text-xs text-blue-100">{user.tecnico.cras}</p>
               </div>
+              {user.tecnico.isAdmin && onNavigateToTechnicians && (
+                <Button
+                  onClick={onNavigateToTechnicians}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-blue-600 gap-2"
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Técnicos</span>
+                </Button>
+              )}
               <SettingsDialog />
               <Button
                 onClick={logout}

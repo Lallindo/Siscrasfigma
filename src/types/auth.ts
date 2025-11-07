@@ -10,7 +10,9 @@ export interface Tecnico {
   id: string;
   nome: string;
   username: string;
+  password: string;
   cras: CrasName;
+  isAdmin: boolean;
 }
 
 export interface AuthUser {

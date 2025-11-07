@@ -11,6 +11,8 @@ export interface FamilyMember {
   raca: string;
   grauInstrucao: string;
   profissao: string;
+  rendaBruta: Number;
+  ativo: boolean; // Indica se o membro está ativo na família
 }
 
 export interface Family {

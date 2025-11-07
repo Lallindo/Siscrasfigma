@@ -3,16 +3,18 @@ import { FamilyList } from './components/FamilyList';
 import { FamilySearch } from './components/FamilySearch';
 import { FamilyForm } from './components/FamilyForm';
 import { LoginForm } from './components/LoginForm';
+import { TechnicianManagement } from './components/TechnicianManagement';
 import { Family, FamilyMember } from './types/family';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { NavigationProvider, useNavigation } from './contexts/NavigationContext';
 import { toast, Toaster } from 'sonner';
 
-type Page = 'list' | 'search' | 'form';
+type Page = 'list' | 'search' | 'form' | 'technicians';
 
 function AppContent() {
   const { user, isLoading } = useAuth();
-  const [currentPage, setCurrentPage] = useState<Page>('list');
+  const { currentPage, navigateTo, goBack } = useNavigation();
   const [currentFamily, setCurrentFamily] = useState<Family | null>(null);
 
   if (isLoading) {
@@ -32,7 +34,7 @@ function AppContent() {
 
   const handleNewFamily = () => {
     setCurrentFamily(null);
-    setCurrentPage('search');
+    navigateTo('search');
   };
 
   const handleCreateFromSearch = (searchData: { nome: string; cpf: string; nis: string }) => {
@@ -52,6 +54,8 @@ function AppContent() {
       raca: '',
       grauInstrucao: '',
       profissao: '',
+      rendaBruta: 0,
+      ativo: true,
     };
 
     // Criar família temporária com o responsável
@@ -67,7 +71,7 @@ function AppContent() {
     };
 
     setCurrentFamily(tempFamily);
-    setCurrentPage('form');
+    navigateTo('form');
     toast.success('Cadastro iniciado para ' + searchData.nome);
   };
 
@@ -92,12 +96,12 @@ function AppContent() {
 
     localStorage.setItem('families', JSON.stringify(updatedFamilies));
     toast.success(`Família transferida para ${user.tecnico.cras}`);
-    setCurrentPage('list');
+    navigateTo('list');
   };
 
   const handleViewFamily = (family: Family) => {
     setCurrentFamily(family);
-    setCurrentPage('form');
+    navigateTo('form');
     
     if (user && family.crasId !== user.tecnico.cras) {
       toast.info('Visualizando cadastro em modo somente leitura');
@@ -144,14 +148,29 @@ function AppContent() {
       toast.success('Família cadastrada com sucesso!');
     }
 
-    setCurrentPage('list');
+    navigateTo('list');
     setCurrentFamily(null);
   };
 
   const handleCancel = () => {
-    setCurrentPage('list');
+    goBack();
     setCurrentFamily(null);
     toast.info('Operação cancelada');
+  };
+
+  const handleNavigateToTechnicians = () => {
+    navigateTo('technicians');
+  };
+
+  const handleBackFromTechnicians = () => {
+    goBack();
+  };
+
+  const handleGoBack = () => {
+    const previousPage = goBack();
+    if (previousPage === 'list' || !previousPage) {
+      setCurrentFamily(null);
+    }
   };
 
   return (
@@ -160,6 +179,7 @@ function AppContent() {
         <FamilyList
           onNewFamily={handleNewFamily}
           onViewFamily={handleViewFamily}
+          onNavigateToTechnicians={handleNavigateToTechnicians}
         />
       )}
 
@@ -180,6 +200,10 @@ function AppContent() {
           readOnly={!canEdit()}
         />
       )}
+
+      {currentPage === 'technicians' && (
+        <TechnicianManagement onBack={handleBackFromTechnicians} />
+      )}
     </>
   );
 }
@@ -188,8 +212,10 @@ export default function App() {
   return (
     <AuthProvider>
       <SettingsProvider>
-        <Toaster position="top-right" richColors />
-        <AppContent />
+        <NavigationProvider>
+          <Toaster position="top-right" richColors />
+          <AppContent />
+        </NavigationProvider>
       </SettingsProvider>
     </AuthProvider>
   );
