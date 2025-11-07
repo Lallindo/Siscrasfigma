@@ -9,3 +9,6 @@
 
   Run `npm run dev` to start the development server.
   
+  ## Mudanças pendentes
+  1. Correção de alteração de família
+  2. Desativação de usuário na família antiga quando transferido
